@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Klusmelding — Friesland Begeleid Wonen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- 📦 Supabase library - EERST laden! -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#F2F5F9; --panel:#FFFFFF; --fill:#F1F4F8; --fill-2:#E9EEF4;
+    --ink:#10141A; --ink-2:#3C4450; --ink-3:#8A929E; --ink-4:#AEB6C0;
+    --sep:rgba(60,70,90,.12); --sep-strong:rgba(60,70,90,.18);
+    --blue:#1F90D4; --blue-press:#1878B3; --blue-soft:#E6F2FB; --blue-line:#BBDDF0; --blue-ink:#176A92;
+    --green:#1F9E63; --green-soft:#E5F5ED; --amber:#C7861B; --amber-soft:#FCF1DD; --orange:#D9822B; --orange-soft:#FBEADA; --red:#D6453C; --red-soft:#FBE9E8;
+    --r:20px; --r-sm:13px; --r-pill:980px;
+    --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(16,40,60,.05), 0 10px 30px -14px rgba(16,40,60,.18);
+    --shadow-lift:0 2px 6px rgba(16,40,60,.07), 0 18px 40px -18px rgba(16,40,60,.24);
+    --shadow-modal:0 30px 70px -20px rgba(16,40,60,.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:var(--f);background:var(--bg);color:var(--ink);line-height:1.45;font-size:16px;-webkit-font-smoothing:antialiased;padding-bottom:max(40px,env(safe-area-inset-bottom))}
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px}
+  .wrap.wide{max-width:920px}
+  a{color:inherit}
+  header{position:sticky;top:0;z-index:30;background:rgba(242,245,249,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--sep);padding:calc(12px + env(safe-area-inset-top)) 0 12px}
+  header .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(160deg,#43A7E2,#1878B3);display:grid;place-items:center;flex:none;box-shadow:0 2px 8px -2px rgba(24,120,179,.5)}
+  .mark svg{width:20px;height:20px}
+  .htxt{margin-right:auto}
+  .htxt h1{font-size:1.08rem;font-weight:660;letter-spacing:-.02em;line-height:1.1}
+  .htxt p{color:var(--ink-3);font-size:.78rem;margin-top:1px;font-weight:450;display:flex;align-items:center;gap:5px}
+  .mode-pill{font-size:.64rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:1px 7px;border-radius:980px}
+  .mode-pill.local{background:var(--amber-soft);color:#7A5310}
+  .mode-pill.cloud{background:var(--green-soft);color:#155C3B}
+  .nav-tabs{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:3px}
+  .nav-tab{font-family:var(--f);font-size:.83rem;font-weight:540;border:none;background:transparent;padding:8px 13px;border-radius:9px;cursor:pointer;color:var(--ink-3);transition:all .15s;white-space:nowrap}
+  .nav-tab.active{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);color:var(--ink);font-weight:600}
+  .nav-tab:hover{color:var(--ink)}
+  .icon-btn{width:34px;height:34px;border:none;border-radius:10px;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--ink-3);transition:background .15s;flex:none}
+  .icon-btn:hover{background:var(--fill-2);color:var(--ink)}
+  .icon-btn svg{width:18px;height:18px}
+
+  main{margin-top:22px}
+  .view{display:none}
+  .view.active{display:block}
+
+  .panel{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .group{margin-bottom:22px}
+  .group>.ghead{font-size:.76rem;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.03em;padding:0 4px 8px}
+  .cell{padding:14px 16px;border-bottom:.5px solid var(--sep)}
+  .cell:last-child{border-bottom:none}
+  .cell label{display:block;font-size:.79rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+  .cell label .opt{font-weight:450;color:var(--ink-4)}
+  input[type=text],input[type=tel],input[type=email],input[type=password],textarea,select{width:100%;font-family:var(--f);font-size:1rem;color:var(--ink);background:transparent;border:none;padding:0;resize:none}
+  input::placeholder,textarea::placeholder{color:var(--ink-4)}
+  input:focus,textarea:focus,select:focus{outline:none}
+  textarea{min-height:76px;line-height:1.5}
+  .boxed-input{background:var(--fill);border:1.5px solid transparent;border-radius:12px;padding:11px 13px;transition:border-color .15s,box-shadow .15s}
+  .boxed-input:focus-within{border-color:var(--blue-line);background:#fff;box-shadow:0 0 0 3px var(--blue-soft)}
+  .seg{display:flex;background:var(--fill-2);border-radius:11px;padding:3px;gap:2px}
+  .seg button{flex:1;border:none;background:transparent;font-family:var(--f);font-size:.88rem;font-weight:500;color:var(--ink-2);padding:9px 4px;border-radius:8px;cursor:pointer;transition:all .2s cubic-bezier(.32,.72,0,1);display:flex;align-items:center;justify-content:center;gap:5px}
+  .seg button .d{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+  .seg button[aria-pressed=true]{background:#fff;box-shadow:0 1px 3px rgba(16,40,60,.16);font-weight:600}
+  .seg button[aria-pressed=true] .d{opacity:1}
+  .seg button[data-v=laag][aria-pressed=true]{color:var(--blue-ink)}
+  .seg button[data-v=normaal][aria-pressed=true]{color:var(--blue-press)}
+  .seg button[data-v=hoog][aria-pressed=true]{color:var(--amber)}
+  .seg button[data-v=spoed][aria-pressed=true]{color:var(--red)}
+
+  .photo-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:none;border-radius:12px;background:var(--blue-soft);color:var(--blue-ink);font-family:var(--f);font-size:.95rem;font-weight:560;cursor:pointer;transition:background .15s,transform .1s}
+  .photo-add:active{transform:scale(.985);background:#D9ECF8}
+  .photo-add svg{width:19px;height:19px}
+  .photo-lim{font-size:.76rem;color:var(--ink-3);margin-top:6px;display:block;text-align:center}
+  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+  .thumb{position:relative;aspect-ratio:1;border-radius:13px;overflow:hidden;background:var(--fill);animation:pop .22s cubic-bezier(.32,.72,0,1);cursor:pointer}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .rm{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:13px;line-height:1}
+
+  .submit,.btn-primary{width:100%;font-family:var(--f);font-size:1.02rem;font-weight:600;letter-spacing:-.008em;color:#fff;background:var(--blue);border:none;border-radius:14px;padding:15px;cursor:pointer;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px -6px rgba(31,144,212,.5)}
+  .submit:active,.btn-primary:active{transform:scale(.985);background:var(--blue-press)}
+  .submit:disabled,.btn-primary:disabled{opacity:.5;box-shadow:none;cursor:not-allowed}
+  .submit svg,.btn-primary svg{width:18px;height:18px}
+  .btn{font-family:var(--f);font-weight:540;font-size:.85rem;border:1px solid var(--sep-strong);background:#fff;color:var(--ink);padding:9px 14px;border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue-ink)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn svg{width:15px;height:15px}
+  .btn-sm{font-size:.78rem;padding:6px 11px;border-radius:8px}
+  .btn-danger{color:var(--red);border-color:var(--red-soft)}
+  .btn-danger:hover{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+
+  .hint{font-size:.79rem;color:var(--ink-3);margin-top:14px;text-align:center;line-height:1.5}
+  .err,.info-banner{display:none;align-items:flex-start;gap:9px;font-size:.86rem;border-radius:14px;padding:12px 14px;margin-bottom:16px;line-height:1.45}
+  .err.show,.info-banner.show{display:flex}
+  .err{background:var(--red-soft);border:.5px solid #F0C7C3;color:#9A2A22;animation:shake .4s}
+  .info-banner{background:var(--amber-soft);border:.5px solid #ECD6A6;color:#7A5310}
+  .info-banner svg,.err svg{width:17px;height:17px;flex:none;margin-top:1px}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+
+  .done{display:none;text-align:center;padding:50px 20px 20px;animation:fade .4s ease}
+  .done.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .done .circle{width:76px;height:76px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center;margin:0 auto 18px;animation:popcircle .5s cubic-bezier(.32,1.4,.5,1)}
+  @keyframes popcircle{from{transform:scale(0)}to{transform:scale(1)}}
+  .done .circle svg{width:38px;height:38px;stroke:var(--green)}
+  .done h2{font-size:1.4rem;font-weight:680;letter-spacing:-.025em;margin-bottom:6px}
+  .done .ref{font-size:.86rem;background:var(--fill);border-radius:12px;padding:9px 15px;display:inline-block;margin:8px auto 14px;font-weight:600;color:var(--ink-2);font-family:var(--mono)}
+  .done p{color:var(--ink-3);font-size:.95rem;margin-bottom:18px;line-height:1.5}
+  .done button{font-family:var(--f);font-size:.95rem;font-weight:560;color:var(--blue-ink);background:var(--blue-soft);border:none;border-radius:13px;padding:13px 24px;cursor:pointer}
+
+  /* ===== dashboard ===== */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 15px}
+  .stat .n{font-size:1.5rem;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .stat .l{font-size:.72rem;color:var(--ink-3);margin-top:5px;font-weight:500}
+  .stat.spoed .n{color:var(--red)} .stat.hoog .n{color:var(--amber)} .stat.open .n{color:var(--blue-ink)}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .search{position:relative;flex:1;min-width:160px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-4)}
+  .search input{width:100%;height:40px;font-size:.88rem;background:var(--panel);border:1px solid var(--sep-strong);border-radius:10px;padding:0 12px 0 34px}
+  .search input:focus{outline:none;border-color:var(--blue-line);box-shadow:0 0 0 3px var(--blue-soft)}
+  select.filter{height:40px;font-size:.83rem;font-weight:500;background:var(--panel);border:1px solid var(--sep-strong);border-radius:10px;padding:0 28px 0 12px;color:var(--ink);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%234A5A6A' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:10px}
+  select.filter:focus{outline:none;border-color:var(--blue-line);box-shadow:0 0 0 3px var(--blue-soft)}
+
+  .m-list{display:flex;flex-direction:column;gap:8px}
+  .m-item{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 15px;cursor:pointer;transition:transform .1s,box-shadow .15s;display:flex;gap:12px;align-items:center;border-left:4px solid transparent}
+  .m-item:active{transform:scale(.99)}
+  .m-item.u-spoed{border-color:var(--red)} .m-item.u-hoog{border-color:var(--amber)}
+  .m-item .body{flex:1;min-width:0}
+  .m-item .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+  .m-item .adres{font-weight:640;font-size:.94rem;letter-spacing:-.01em}
+  .m-item .oms{font-size:.83rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-item .meta{font-size:.75rem;color:var(--ink-3);margin-top:3px}
+  .badge{font-size:.68rem;font-weight:640;padding:2px 9px;border-radius:980px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  .badge .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-laag{background:var(--fill-2);color:var(--ink-3)} .b-normaal{background:var(--blue-soft);color:var(--blue-ink)}
+  .b-hoog{background:var(--amber-soft);color:var(--amber)} .b-spoed{background:var(--red-soft);color:var(--red)}
+  .s-open{background:var(--fill-2);color:var(--ink-2)} .s-in_behandeling{background:var(--orange-soft);color:var(--orange)} .s-afgerond{background:var(--green-soft);color:var(--green)}
+  .chev{color:var(--ink-4);flex:none}
+  .empty{text-align:center;color:var(--ink-4);padding:44px 20px;background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);font-size:.9rem}
+
+  .overlay{position:fixed;inset:0;background:rgba(16,30,45,.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:18px 12px;z-index:60}
+  .overlay.open{display:flex;animation:ovin .2s ease}
+  @keyframes ovin{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--panel);border-radius:22px;box-shadow:var(--shadow-modal);width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;animation:mdin .25s cubic-bezier(.32,.72,0,1)}
+  @keyframes mdin{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 8px}
+  .modal-head h2{font-size:1.08rem;font-weight:700;letter-spacing:-.02em}
+  .modal-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--fill-2);cursor:pointer;display:grid;place-items:center;color:var(--ink-3);flex:none}
+  .modal-close:hover{background:#DDE3EB;color:var(--ink)}
+  .modal-body{padding:6px 18px 8px;overflow-y:auto}
+  .modal-foot{padding:12px 18px;border-top:.5px solid var(--sep);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+  .detail-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:.5px solid var(--sep);font-size:.88rem}
+  .detail-row:last-child{border-bottom:none}
+  .detail-row .dl{color:var(--ink-3);flex:none}
+  .detail-row .dv{text-align:right;color:var(--ink);font-weight:500}
+  .detail-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .detail-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer;background:var(--fill)}
+  .status-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+  .status-actions button{font-family:var(--f);font-size:.78rem;font-weight:600;padding:9px 4px;border-radius:9px;border:1.5px solid var(--sep-strong);background:#fff;color:var(--ink-2);cursor:pointer}
+  .status-actions button[aria-pressed=true]{border-color:currentColor}
+  .status-actions button[data-s=open][aria-pressed=true]{background:var(--fill-2);color:var(--ink)}
+  .status-actions button[data-s=in_behandeling][aria-pressed=true]{background:var(--orange-soft);color:var(--orange)}
+  .status-actions button[data-s=afgerond][aria-pressed=true]{background:var(--green-soft);color:var(--green)}
+  .lightbox{position:fixed;inset:0;background:rgba(10,15,20,.92);z-index:70;display:none;align-items:center;justify-content:center;padding:20px}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+  .lightbox .lb-close{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;display:grid;place-items:center}
+
+  /* ===== auth gate ===== */
+  .gate{max-width:360px;margin:60px auto 0}
+  .gate .panel{padding:26px 24px}
+  .gate h2{font-size:1.2rem;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;text-align:center}
+  .gate p{font-size:.86rem;color:var(--ink-3);text-align:center;margin-bottom:20px;line-height:1.5}
+  .gate .boxed-input{margin-bottom:10px}
+  .gate label{font-size:.79rem;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px}
+
+  /* ===== QR view ===== */
+  .qr-card{background:#fff;border-radius:16px;padding:20px;text-align:center;box-shadow:var(--shadow);break-inside:avoid}
+  .qr-card canvas,.qr-card img{margin:0 auto}
+  .qr-card .qa{font-weight:700;font-size:.92rem;margin-top:12px;letter-spacing:-.01em}
+  .qr-card .qi{font-size:.76rem;color:var(--ink-3);margin-top:3px}
+  .qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:16px}
+  @media print{
+    body *{visibility:hidden}
+    #printArea,#printArea *{visibility:visible}
+    #printArea{position:absolute;top:0;left:0;width:100%}
+    .qr-grid{grid-template-columns:repeat(2,1fr)}
+    .qr-card .btn-sm{display:none}
+  }
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.79rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap wide">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 3.5l9 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20h14V9.5" stroke="rgba(255,255,255,.75)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 20v-4.5h3V20" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="htxt">
+      <h1>Klusmelding</h1>
+      <p id="tenantLabel">Friesland Begeleid Wonen <span class="mode-pill local" id="modePill">LOKAAL</span></p>
+    </div>
+    <div class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-view="melden">Melden</button>
+      <button class="nav-tab" data-view="beheer">Beheer</button>
+      <button class="nav-tab" data-view="qr">QR-codes</button>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Instellingen" title="Instellingen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= MELDEN ================= -->
+<div class="view active wrap" id="viewMelden">
+  <div class="info-banner" id="localWarn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg>
+    <span>Lokale modus &mdash; meldingen worden alleen op dit apparaat bewaard. Koppel Supabase (instellingen) voor een echte gedeelde inbox.</span>
+  </div>
+
+  <form id="meldForm">
+    <div class="err" id="meldErr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg><span id="meldErrTxt"></span></div>
+
+    <div class="group">
+      <div class="ghead">Waar &amp; wat</div>
+      <div class="panel">
+        <div class="cell"><label for="mAdres">Adres / appartement</label><div class="boxed-input"><input type="text" id="mAdres" placeholder="bv. Schoolstraat 1, app. 3 — Heerenveen" autocomplete="off"></div></div>
+        <div class="cell"><label for="mOms">Wat is het gebrek?</label><div class="boxed-input"><textarea id="mOms" placeholder="Beschrijf zo concreet mogelijk wat er kapot is en waar."></textarea></div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="ghead">Urgentie</div>
+      <div class="seg" id="urg" role="group" aria-label="Urgentie">
+        <button type="button" data-v="laag"><span class="d"></span>Laag</button>
+        <button type="button" data-v="normaal" aria-pressed="true"><span class="d"></span>Normaal</button>
+        <button type="button" data-v="hoog"><span class="d"></span>Hoog</button>
+        <button type="button" data-v="spoed"><span class="d"></span>Spoed</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="ghead">Foto's <span style="text-transform:none;font-weight:450;color:var(--ink-4)">— optioneel (max 3)</span></div>
+      <button type="button" class="photo-add" id="photoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2l1.2-2h6.6L15.5 7h2A1.5 1.5 0 0 1 19 8.5v9A1.5 1.5 0 0 1 17.5 19h-13A1.5 1.5 0 0 1 3 17.5z" stroke-linejoin="round"/><circle cx="11" cy="12.5" r="3.2"/></svg>Foto toevoegen of maken</button>
+      <input type="file" id="foto" accept="image/*" capture="environment" style="display:none">
+      <span class="photo-lim" id="photoLim"></span>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+
+    <div class="group">
+      <div class="ghead">Wie meldt het</div>
+      <div class="panel">
+        <div class="cell"><label for="mNaam">Jouw naam</label><div class="boxed-input"><input type="text" id="mNaam" placeholder="Voor- en achternaam" autocomplete="name"></div></div>
+        <div class="cell"><label for="mContact">Telefoon of e-mail <span class="opt">— optioneel</span></label><div class="boxed-input"><input type="text" inputmode="email" id="mContact" placeholder="Voor als er een vraag over is" autocomplete="off"></div></div>
+        <div class="cell"><label for="mOpm">Extra opmerking <span class="opt">— optioneel</span></label><div class="boxed-input"><textarea id="mOpm" style="min-height:56px" placeholder="Bijv. al contact gehad, of een specifieke wens."></textarea></div></div>
+      </div>
+    </div>
+
+    <button type="submit" class="submit" id="meldSubmit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg>Melding versturen</button>
+    <div class="hint" id="meldHint">Je melding komt direct bij de woningbeheerder binnen.</div>
+  </form>
+
+  <div class="done" id="meldDone">
+    <div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M4 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h2>Verstuurd</h2>
+    <div class="ref" id="refNr"></div>
+    <p>Bedankt. De beheerder pakt het op.<br>Bewaar het referentienummer voor eventuele vragen.</p>
+    <div class="info-banner" id="deliveryWarn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg>
+      <span>Deze melding staat nu alleen op <strong>dit apparaat</strong>. Verstuur 'm ook per e-mail zodat de beheerder 'm zeker ontvangt.</span>
+    </div>
+    <button type="button" class="btn" id="emailBtn" style="width:100%;justify-content:center;margin-bottom:10px;display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" stroke-linecap="round" stroke-linejoin="round"/></svg>Verstuur ook per e-mail</button>
+    <button id="meldAgain">Nog een melding</button>
+  </div>
+</div>
+
+<!-- ================= BEHEER ================= -->
+<div class="view wrap wide" id="viewBeheer">
+  <div class="gate" id="beheerGate">
+    <div class="panel">
+      <h2 id="gateTitle">Inloggen</h2>
+      <p id="gateSub">Alleen voor beheerders.</p>
+      <div id="gateLocalFields">
+        <label for="gatePin">Toegangscode</label>
+        <div class="boxed-input"><input type="password" id="gatePin" placeholder="Voer de code in" autocomplete="off"></div>
+      </div>
+      <div id="gateCloudFields" style="display:none">
+        <label for="gateEmail">E-mailadres</label>
+        <div class="boxed-input"><input type="email" id="gateEmail" placeholder="naam@organisatie.nl" autocomplete="username"></div>
+        <label for="gatePass">Wachtwoord</label>
+        <div class="boxed-input"><input type="password" id="gatePass" placeholder="Wachtwoord" autocomplete="current-password"></div>
+      </div>
+      <div class="err" id="gateErr" style="margin-top:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg><span id="gateErrTxt"></span></div>
+      <button class="btn-primary" id="gateSubmit" style="margin-top:6px">Inloggen</button>
+      <p style="margin-top:14px;font-size:.76rem;color:var(--ink-4);line-height:1.5" id="gateFootnote">Lokale modus: dit is geen echte beveiliging, alleen een drempel tegen per ongeluk openklikken. Koppel Supabase voor echte toegangscontrole.</p>
+    </div>
+  </div>
+
+  <div id="beheerContent" style="display:none">
+    <div class="stats" id="dashStats"></div>
+    <div class="toolbar">
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg><input type="text" id="dashQ" placeholder="Zoek op adres of naam…"></div>
+      <select class="filter" id="dashStatus"><option value="">Alle statussen</option><option value="open">Open</option><option value="in_behandeling">In behandeling</option><option value="afgerond">Afgerond</option></select>
+      <select class="filter" id="dashUrgentie"><option value="">Alle urgenties</option><option value="spoed">Spoed</option><option value="hoog">Hoog</option><option value="normaal">Normaal</option><option value="laag">Laag</option></select>
+      <button class="icon-btn" id="auditLogBtn" title="Audit-log" aria-label="Audit-log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 12h6M9 16h6M9 8h6M5 4h14v16H5z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn" id="signOutBtn" title="Uitloggen" aria-label="Uitloggen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="m-list" id="mList"></div>
+  </div>
+</div>
+
+<!-- ================= QR ================= -->
+<div class="view wrap wide" id="viewQr">
+  <div class="group">
+    <div class="ghead">Eén adres</div>
+    <div class="panel" style="padding:16px">
+      <div class="field"><label for="qrAdres">Adres</label><div class="boxed-input"><input type="text" id="qrAdres" placeholder="bv. Schoolstraat 1, app. 3 — Heerenveen"></div></div>
+      <button class="btn-primary" id="qrAddBtn" type="button">QR-code genereren</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="ghead">Meerdere tegelijk</div>
+    <div class="panel" style="padding:16px">
+      <div class="field"><label for="qrBulk">Eén adres per regel</label><div class="boxed-input"><textarea id="qrBulk" style="min-height:100px" placeholder="Schoolstraat 1, app. 1&#10;Schoolstraat 1, app. 2&#10;Schoolstraat 1, app. 3"></textarea></div></div>
+      <button class="btn-primary" id="qrBulkBtn" type="button">Alles genereren</button>
+    </div>
+  </div>
+
+  <div class="group" id="qrResultGroup" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="ghead" style="padding:0">Gegenereerde QR-codes</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="qrPrintBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v7H8z" stroke-linecap="round" stroke-linejoin="round"/></svg>Print alles</button>
+        <button class="btn btn-sm btn-danger" id="qrClearBtn" type="button">Wissen</button>
+      </div>
+    </div>
+    <div id="printArea"><div class="qr-grid" id="qrGrid"></div></div>
+  </div>
+</div>
+
+</main>
+
+<div class="lightbox" id="lightbox"><button class="lb-close" id="lbClose">✕</button><img id="lbImg" src="" alt=""></div>
+
+<!-- Melding-detail -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="dAdres"></h2><button class="modal-close" id="dClose">✕</button></div>
+    <div class="modal-body" id="dBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="dDelete">Verwijderen</button>
+      <button class="btn" id="dCloseBtn">Sluiten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Instellingen -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>Instellingen</h2><button class="modal-close" id="settingsClose">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Organisatienaam</label><div class="boxed-input"><input type="text" id="cfgTenant"></div></div>
+      <div class="field"><label>Contact-e-mail (voor de e-mail-fallback in lokale modus)</label><div class="boxed-input"><input type="email" id="cfgEmail" placeholder="beheerder@organisatie.nl"></div></div>
+      <div class="field"><label>Toegangscode Beheer (lokale modus)</label><div class="boxed-input"><input type="text" id="cfgPin" placeholder="bv. 1234"></div></div>
+      <div class="info-banner show" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg>
+        <span>Supabase koppelen kan niet via dit scherm — dat vereist het invullen van <code>SUPABASE_URL</code> en <code>SUPABASE_ANON_KEY</code> bovenin het bestand zelf (zie de bijgeleverde <em>SUPABASE-SETUP.md</em>). Na het invullen herlaadt de app automatisch in cloud-modus.</span>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" id="settingsCloseBtn2">Annuleren</button><button class="btn-primary" id="settingsSave" style="width:auto;padding:9px 18px">Opslaan</button></div>
+  </div>
+</div>
+
+<!-- Audit-log -->
+<div class="overlay" id="auditOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>📋 Audit-log</h2><button class="modal-close" id="auditClose">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:.82rem;color:var(--ink-3);margin-bottom:10px">Wie deed wat, wanneer — laatste 100 acties.</p>
+      <div id="auditList"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" id="auditExportBtn">📥 Export CSV</button><button class="btn-primary" id="auditCloseBtn2" style="width:auto;padding:9px 18px">Sluiten</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0D1117;color:#fff;padding:10px 22px;border-radius:40px;font-size:.86rem;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.9/build/pdfmake.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.9/build/vfs_fonts.js"></script>
+<script>
+(function(){
+"use strict";
+
+// ============================================================
+// CONFIG - Supabase
+// ============================================================
+const SUPABASE_URL = 'https://webcyioxkoyiyfvtkjds.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_C_-t9gDWwOlE_ZD9l6hpBA_MIoIXGUx';
+const USE_SUPABASE = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+// ============================================================
+// HELPERS
+// ============================================================
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const nowISO=()=>new Date().toISOString();
+
+function fmtRel(iso){
+  const d=new Date(iso), diffMs=Date.now()-d.getTime(), min=Math.floor(diffMs/60000);
+  if(min<1)return 'zojuist'; if(min<60)return min+' min geleden';
+  const h=Math.floor(min/60); if(h<24)return h+' uur geleden';
+  const days=Math.floor(h/24); if(days<7)return days+' dag'+(days>1?'en':'')+' geleden';
+  return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+}
+function fmtFull(iso){ return new Date(iso).toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function toast(msg,isError){const t=$('toast');t.textContent=msg;t.style.opacity='1';t.style.background=isError?'#B23A33':'#0D1117';clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2600);}
+function generateRef(){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let code='';for(let i=0;i<6;i++)code+=c.charAt(Math.floor(Math.random()*c.length));return 'K-'+code;}
+
+function valideerContact(v){
+  if(!v) return null;
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+  const cijfers = v.replace(/[\s\-()]/g,'');
+  const isTelefoon = /^(\+31|0)[0-9]{9}$/.test(cijfers);
+  if(isEmail || isTelefoon) return null;
+  return 'Vul een geldig telefoonnummer (bv. 06-12345678) of e-mailadres in.';
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+function auditActor(){
+  const user = DB.currentUser();
+  if(DB.requiresRealAuth) return (user && user.email) || 'onbekende beheerder';
+  return user ? 'beheerder (lokaal)' : 'melder';
+}
+function auditLog(action, detail, actorOverride){
+  const entry = { id: uid(), time: nowISO(), actor: actorOverride||auditActor(), action, detail: detail||'' };
+  try{
+    const log = JSON.parse(localStorage.getItem('klus_audit_log')||'[]');
+    log.push(entry);
+    if(log.length>500) log.shift();
+    localStorage.setItem('klus_audit_log', JSON.stringify(log));
+  }catch(e){}
+  if(DB.requiresRealAuth && DB.client){
+    DB.client.from('audit_log').insert(entry).then(()=>{}).catch(err=>console.warn('audit-log (cloud) mislukt:', err));
+  }
+}
+
+async function renderAuditLog(){
+  const el = $('auditList');
+  el.innerHTML = '<div class="empty">Laden…</div>';
+  let log = [];
+  let cloudFout = null;
+  if(DB.requiresRealAuth && DB.client){
+    try{
+      const {data,error} = await DB.client.from('audit_log').select('*').order('time',{ascending:false}).limit(100);
+      if(error) throw error;
+      log = data||[];
+    }catch(err){
+      console.warn('audit-log ophalen uit Supabase mislukt, val terug op lokaal:', err);
+      cloudFout = err.message || 'onbekende fout';
+    }
+  }
+  if(!DB.requiresRealAuth || cloudFout){
+    try{ log = JSON.parse(localStorage.getItem('klus_audit_log')||'[]').slice().reverse(); }catch(e){ log=[]; }
+  }
+  if(cloudFout){
+    el.innerHTML = '<div class="info-banner show" style="margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg><span>Kon het gedeelde audit-log niet ophalen (' + esc(cloudFout) + '). Onderstaand is het lokale logboek van dit apparaat.</span></div>';
+  } else {
+    el.innerHTML = '';
+  }
+  if(!log.length){ el.innerHTML += '<div class="empty">Nog geen acties gelogd.</div>'; return; }
+  el.innerHTML += log.slice(0,100).map(e=>`
+    <div class="detail-row" style="align-items:flex-start">
+      <span class="dl" style="white-space:nowrap">${fmtFull(e.time)}</span>
+      <span class="dv" style="text-align:right"><strong>${esc(e.action)}</strong><br><span style="font-size:.78rem;color:var(--ink-3)">${esc(e.actor)}${e.detail?' — '+esc(e.detail):''}</span></span>
+    </div>`).join('');
+}
+
+// ============================================================
+// COMPRESS
+// ============================================================
+function compress(file,maxDim,quality){maxDim=maxDim||1200;quality=quality||0.8;return new Promise(resolve=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=function(){let w=img.width,h=img.height;if(Math.max(w,h)>maxDim){const s=maxDim/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);c.toBlob(b=>resolve(b||file),'image/jpeg',quality);};img.onerror=()=>resolve(file);img.src=url;});}
+function toDataURL(blob){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(blob);});}
+
+// ============================================================
+// LOCAL CONFIG
+// ============================================================
+const DEFAULT_CFG={tenant:'Friesland Begeleid Wonen',contactEmail:'',pin:'1234'};
+function getLocalCfg(){try{const r=localStorage.getItem('klus_cfg');if(r)return Object.assign({},DEFAULT_CFG,JSON.parse(r));}catch(e){}return Object.assign({},DEFAULT_CFG);}
+function setLocalCfg(c){try{localStorage.setItem('klus_cfg',JSON.stringify(c));}catch(e){}}
+
+// ============================================================
+// DATA LAYER
+// ============================================================
+
+class LocalAdapter{
+  constructor(){
+    this.key='klus_meldingen_v2';
+    this.requiresRealAuth=false;
+    this._authed = sessionStorage.getItem('klus_local_authed')==='1';
+    this._authCbs=[];
+    window.addEventListener('storage', e=>{ if(e.key===this.key) this._notify(); });
+  }
+  _read(){ try{ const r=localStorage.getItem(this.key); const p=r?JSON.parse(r):[]; return Array.isArray(p)?p:[]; }catch(e){ return []; } }
+  _write(arr){ try{ localStorage.setItem(this.key, JSON.stringify(arr)); }catch(e){ console.error('opslaan mislukt',e); } this._notify(); }
+  _notify(){ this._subs && this._subs.forEach(cb=>cb()); }
+  async list(){ return this._read().sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)); }
+  async create(payload){
+    const fotoData=[];
+    for(const file of (payload.fotoFiles||[])){ const blob=await compress(file,1200,.8); fotoData.push(await toDataURL(blob)); }
+    const record={
+      id: generateRef(), created_at: nowISO(),
+      adres: payload.adres, omschrijving: payload.omschrijving, urgentie: payload.urgentie,
+      melder_naam: payload.melder_naam, melder_contact: payload.melder_contact||null, opmerking: payload.opmerking||null,
+      status:'open', beheer_notitie:'', foto_paths: fotoData
+    };
+    const all=this._read(); all.unshift(record); this._write(all);
+    return record;
+  }
+  async updateStatus(id,status){ const all=this._read(); const next=all.map(m=>m.id===id?{...m,status}:m); this._write(next); }
+  async addNotitie(id,tekst){ const all=this._read(); const next=all.map(m=>m.id===id?{...m,beheer_notitie:tekst}:m); this._write(next); }
+  async remove(id){ this._write(this._read().filter(m=>m.id!==id)); }
+  async photoUrl(pathOrDataUrl){ return pathOrDataUrl; }
+  subscribe(cb){ this._subs=this._subs||[]; this._subs.push(cb); return ()=>{ this._subs=this._subs.filter(x=>x!==cb); }; }
+  async signIn({pin}){ const cfg=getLocalCfg(); if(String(pin)!==String(cfg.pin)) throw new Error('Onjuiste code.'); this._authed=true; sessionStorage.setItem('klus_local_authed','1'); this._authCbs.forEach(cb=>cb({local:true})); }
+  async signOut(){ this._authed=false; sessionStorage.removeItem('klus_local_authed'); this._authCbs.forEach(cb=>cb(null)); }
+  onAuthChange(cb){ this._authCbs.push(cb); return ()=>{ this._authCbs=this._authCbs.filter(x=>x!==cb); }; }
+  currentUser(){ return this._authed?{local:true}:null; }
+}
+
+// ============================================================
+// SUPABASE ADAPTER - FOTO FIX!
+// ============================================================
+class SupabaseAdapter{
+  constructor(url,anonKey){
+    this.requiresRealAuth=true;
+    this.client = window.supabase.createClient(url, anonKey);
+    this.table = 'meldingen';
+    this.bucket = 'klus-fotos';
+    this._authCbs=[];
+    this._currentUserCache=null;
+    this.client.auth.onAuthStateChange((_event,session)=>{
+      this._currentUserCache=session?session.user:null;
+      this._authCbs.forEach(cb=>cb(this._currentUserCache));
+    });
+    this.client.auth.getSession().then(({data,error})=>{
+      if(error){ console.error('Bestaande beheersessie laden mislukt:', error); return; }
+      this._currentUserCache=data.session?data.session.user:null;
+      this._authCbs.forEach(cb=>cb(this._currentUserCache));
+    });
+  }
+  async list(){
+    const {data,error}=await this.client.from(this.table).select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    return data;
+  }
+  async create(payload){
+    const id = crypto.randomUUID ? crypto.randomUUID() : uid()+uid();
+    const fotoPaths=[];
+    let i=0;
+    for(const file of (payload.fotoFiles||[])){
+      i++;
+      const blob=await compress(file,1400,.82);
+      const path=`${id}/${i}.jpg`;
+      const {error:upErr}=await this.client.storage.from(this.bucket).upload(path, blob, {contentType:'image/jpeg'});
+      if(upErr) throw upErr;
+      fotoPaths.push(path);
+    }
+    const record={
+      id, adres: payload.adres, omschrijving: payload.omschrijving, urgentie: payload.urgentie,
+      melder_naam: payload.melder_naam, melder_contact: payload.melder_contact||null, opmerking: payload.opmerking||null,
+      status:'open', foto_paths: fotoPaths
+    };
+    const {data,error}=await this.client.from(this.table).insert(record).select().single();
+    if(error) throw error;
+    return data;
+  }
+  async updateStatus(id,status){ const {error}=await this.client.from(this.table).update({status}).eq('id',id); if(error) throw error; }
+  async addNotitie(id,tekst){ const {error}=await this.client.from(this.table).update({beheer_notitie:tekst}).eq('id',id); if(error) throw error; }
+  async remove(id){ const {error}=await this.client.from(this.table).delete().eq('id',id); if(error) throw error; }
+  
+  // ============================================================
+  // 📸 FOTO FIX - PUBLIC BUCKET VERSIE
+  // ============================================================
+  async photoUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('data:')) return path;
+    // Gebruik de public URL (geen signed URL nodig omdat bucket public is)
+    const { data } = this.client.storage.from(this.bucket).getPublicUrl(path);
+    return data.publicUrl;
+  }
+  
+  subscribe(cb){
+    const channel=this.client.channel('meldingen-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:this.table}, ()=>cb())
+      .subscribe();
+    return ()=>{ this.client.removeChannel(channel); };
+  }
+  async signIn({email,password}){
+    const {data,error}=await this.client.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    this._currentUserCache=data.user||null;
+    this._authCbs.forEach(cb=>cb(this._currentUserCache));
+  }
+  async signOut(){
+    const {error}=await this.client.auth.signOut();
+    if(error) throw error;
+    this._currentUserCache=null;
+    this._authCbs.forEach(cb=>cb(null));
+  }
+  onAuthChange(cb){ this._authCbs.push(cb); return ()=>{ this._authCbs=this._authCbs.filter(x=>x!==cb); }; }
+  currentUser(){ return this._currentUserCache||null; }
+}
+
+// ============================================================
+// STARTUP
+// ============================================================
+let DB = new LocalAdapter();
+
+async function tryUpgradeToCloud(){
+  if(!window.supabase){
+    console.error('Supabase library niet geladen');
+    return;
+  }
+  DB = new SupabaseAdapter(SUPABASE_URL, SUPABASE_ANON_KEY);
+  DB.onAuthChange(()=>refreshAuthGate());
+  initModeIndicator();
+  refreshAuthGate();
+  toast('Cloudverbinding actief');
+}
+
+// ============================================================
+// UI
+// ============================================================
+function initModeIndicator(){
+  $('modePill').textContent = DB.requiresRealAuth ? 'SUPABASE' : 'LOKAAL';
+  $('modePill').className = 'mode-pill ' + (DB.requiresRealAuth?'cloud':'local');
+  $('localWarn').classList.toggle('show', !DB.requiresRealAuth);
+  $('gateFootnote').style.display = DB.requiresRealAuth ? 'none' : '';
+  $('gateLocalFields').style.display = DB.requiresRealAuth ? 'none' : '';
+  $('gateCloudFields').style.display = DB.requiresRealAuth ? '' : 'none';
+  $('gateTitle').textContent = DB.requiresRealAuth ? 'Beheerder-login' : 'Toegangscode';
+  $('gateSub').textContent = DB.requiresRealAuth ? 'Log in met je organisatie-account.' : 'Alleen voor beheerders — voer de toegangscode in.';
+}
+initModeIndicator();
+
+// ---------- navigatie ----------
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  ({melden:'viewMelden',beheer:'viewBeheer',qr:'viewQr'})[v] && $(({melden:'viewMelden',beheer:'viewBeheer',qr:'viewQr'})[v]).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+  if(v==='beheer') refreshAuthGate();
+}
+document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+
+// ---------- MELDEN ----------
+let urgentie='normaal';
+$('urg').querySelectorAll('button').forEach(b=>b.addEventListener('click',function(){ $('urg').querySelectorAll('button').forEach(x=>x.removeAttribute('aria-pressed')); this.setAttribute('aria-pressed','true'); urgentie=this.dataset.v; }));
+const MAX_FOTOS=3; let files=[];
+function updatePhotoLim(){ const rest=MAX_FOTOS-files.length; $('photoLim').textContent = rest>0 ? `Nog ${rest} foto${rest>1?"'s":''} mogelijk.` : "Maximaal aantal foto's bereikt."; $('photoLim').style.color = rest>0?'var(--ink-3)':'var(--red)'; }
+updatePhotoLim();
+$('photoBtn').addEventListener('click',()=>{ if(files.length>=MAX_FOTOS){ showMeldErr("Je kunt maximaal "+MAX_FOTOS+" foto's toevoegen."); return; } $('foto').click(); });
+$('foto').addEventListener('change',e=>{ const nw=Array.from(e.target.files).filter(f=>f.type.indexOf('image')===0); const toAdd=nw.slice(0,MAX_FOTOS-files.length); if(toAdd.length<nw.length) showMeldErr("Maximaal "+MAX_FOTOS+" foto's toegestaan. Extra foto's genegeerd."); files=files.concat(toAdd); e.target.value=''; renderThumbs(); });
+function renderThumbs(){
+  $('thumbs').innerHTML='';
+  files.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<img src="${url}" alt=""><button type="button" class="rm" data-i="${i}">✕</button>`;
+    $('thumbs').appendChild(d);
+  });
+  $('thumbs').querySelectorAll('.rm').forEach(b=>b.addEventListener('click',function(){ files.splice(+this.dataset.i,1); renderThumbs(); }));
+  updatePhotoLim();
+}
+function showMeldErr(msg){ $('meldErrTxt').textContent=msg; $('meldErr').classList.remove('show'); void $('meldErr').offsetWidth; $('meldErr').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); }
+function meldBtnReset(){ $('meldSubmit').disabled=false; $('meldSubmit').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg>Melding versturen'; }
+
+const urlParams=new URLSearchParams(window.location.search);
+const locatie=urlParams.get('locatie');
+if(locatie) $('mAdres').value=locatie;
+if(urlParams.get('view')==='melden') switchView('melden');
+
+let laatsteMelding=null;
+$('meldForm').addEventListener('submit', async function(e){
+  e.preventDefault(); $('meldErr').classList.remove('show');
+  const adres=$('mAdres').value.trim(), oms=$('mOms').value.trim(), naam=$('mNaam').value.trim();
+  if(!adres||!oms||!naam){ showMeldErr('Vul adres, omschrijving en je naam in.'); return; }
+  const contactFout = valideerContact($('mContact').value.trim());
+  if(contactFout){ showMeldErr(contactFout); return; }
+  $('meldSubmit').disabled=true; $('meldSubmit').innerHTML='Bezig…';
+  try{
+    const record = await DB.create({ adres, omschrijving:oms, urgentie, melder_naam:naam, melder_contact:$('mContact').value.trim()||null, opmerking:$('mOpm').value.trim()||null, fotoFiles: files });
+    auditLog('melding.aangemaakt', record.id+' — '+adres, 'melder: '+naam);
+    laatsteMelding = record;
+    $('refNr').textContent='Referentie: '+record.id;
+    $('deliveryWarn').classList.toggle('show', !DB.requiresRealAuth);
+    $('emailBtn').style.display = DB.requiresRealAuth ? 'none' : 'flex';
+    $('meldForm').style.display='none'; $('meldDone').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'});
+  }catch(err){ console.error(err); showMeldErr('Versturen mislukt: '+(err.message||'onbekende fout')); meldBtnReset(); }
+});
+$('emailBtn').addEventListener('click',function(){
+  if(!laatsteMelding) return;
+  const m=laatsteMelding, cfg=getLocalCfg();
+  const subject='Klusmelding '+m.id+' — '+m.adres;
+  const bodyLines=['Referentie: '+m.id,'Adres: '+m.adres,'Urgentie: '+m.urgentie,'','Omschrijving:',m.omschrijving,'','Gemeld door: '+m.melder_naam, m.melder_contact?('Contact: '+m.melder_contact):'', m.opmerking?('Opmerking: '+m.opmerking):'','', (m.foto_paths&&m.foto_paths.length)?(m.foto_paths.length+" foto's toegevoegd in de app — niet automatisch bijgevoegd in deze e-mail."):'','Automatisch gegenereerd door Klusmelding.'].filter(Boolean);
+  window.location.href='mailto:'+encodeURIComponent(cfg.contactEmail||'')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(bodyLines.join('\n'));
+});
+$('meldAgain').addEventListener('click',function(){ files=[]; renderThumbs(); ['mAdres','mOms','mNaam','mContact','mOpm'].forEach(id=>$(id).value=''); $('meldDone').classList.remove('show'); $('meldForm').style.display=''; meldBtnReset(); laatsteMelding=null; window.scrollTo({top:0,behavior:'smooth'}); });
+
+// ---------- BEHEER: auth gate ----------
+function refreshAuthGate(){
+  const user=DB.currentUser();
+  $('beheerGate').style.display = user ? 'none' : '';
+  $('beheerContent').style.display = user ? '' : 'none';
+  if(user) loadDashboard();
+}
+DB.onAuthChange(()=>refreshAuthGate());
+
+$('gateSubmit').addEventListener('click', async function(){
+  $('gateErr').classList.remove('show');
+  const button=this;
+  button.disabled=true;
+  button.textContent='Bezig met inloggen…';
+  try{
+    if(DB.requiresRealAuth){
+      const email=$('gateEmail').value.trim(), pass=$('gatePass').value;
+      if(!email||!pass){ throw new Error('Vul e-mail en wachtwoord in.'); }
+      await DB.signIn({email,password:pass});
+    } else {
+      await DB.signIn({pin:$('gatePin').value.trim()});
+    }
+    auditLog('auth.ingelogd', '');
+    refreshAuthGate();
+  }catch(err){
+    const bericht = DB.requiresRealAuth && /invalid login credentials/i.test(err.message||'')
+      ? 'E-mailadres of wachtwoord is onjuist.'
+      : DB.requiresRealAuth && /email not confirmed/i.test(err.message||'')
+        ? 'Bevestig eerst je e-mailadres via de ontvangen e-mail.'
+        : (err.message||'Inloggen mislukt. Probeer het opnieuw.');
+    $('gateErrTxt').textContent=bericht;
+    $('gateErr').classList.add('show');
+  }finally{
+    button.disabled=false;
+    button.textContent='Inloggen';
+  }
+});
+$('gatePin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('gateSubmit').click(); });
+$('gateEmail').addEventListener('keydown',e=>{ if(e.key==='Enter') $('gateSubmit').click(); });
+$('gatePass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('gateSubmit').click(); });
+$('signOutBtn').addEventListener('click', async ()=>{ auditLog('auth.uitgelogd', ''); await DB.signOut(); refreshAuthGate(); toast('Uitgelogd'); });
+
+// ---------- BEHEER: dashboard ----------
+let meldingenCache=[]; let unsubscribeDash=null;
+async function loadDashboard(){
+  try{ meldingenCache = await DB.list(); }
+  catch(err){ console.error(err); toast('Laden mislukt: '+(err.message||''), true); meldingenCache=[]; }
+  renderDashboard();
+  if(!unsubscribeDash){ unsubscribeDash = DB.subscribe(async ()=>{ meldingenCache = await DB.list(); renderDashboard(); }); }
+}
+function renderDashboard(){
+  const q=$('dashQ').value.toLowerCase().trim(), st=$('dashStatus').value, ug=$('dashUrgentie').value;
+  let rows=meldingenCache.filter(m=>{
+    if(st && m.status!==st) return false;
+    if(ug && m.urgentie!==ug) return false;
+    if(q && !(`${m.adres} ${m.melder_naam}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const rank={spoed:0,hoog:1,normaal:2,laag:3};
+  rows.sort((a,b)=>{ if(a.status!==b.status){ const sr={open:0,in_behandeling:1,afgerond:2}; return sr[a.status]-sr[b.status]; } const r=rank[a.urgentie]-rank[b.urgentie]; if(r) return r; return new Date(b.created_at)-new Date(a.created_at); });
+
+  const open=meldingenCache.filter(m=>m.status==='open').length;
+  const inBeh=meldingenCache.filter(m=>m.status==='in_behandeling').length;
+  const spoed=meldingenCache.filter(m=>m.status!=='afgerond'&&m.urgentie==='spoed').length;
+  const hoog=meldingenCache.filter(m=>m.status!=='afgerond'&&m.urgentie==='hoog').length;
+  $('dashStats').innerHTML = `
+    <div class="stat open"><div class="n">${open}</div><div class="l">Open</div></div>
+    <div class="stat"><div class="n">${inBeh}</div><div class="l">In behandeling</div></div>
+    <div class="stat spoed"><div class="n">${spoed}</div><div class="l">Spoed (openstaand)</div></div>
+    <div class="stat hoog"><div class="n">${hoog}</div><div class="l">Hoog (openstaand)</div></div>`;
+
+  const L=$('mList');
+  if(!rows.length){ L.innerHTML='<div class="empty">Geen meldingen gevonden.</div>'; return; }
+  L.innerHTML='';
+  rows.forEach(m=>{
+    const el=document.createElement('div');
+    el.className='m-item u-'+m.urgentie;
+    el.innerHTML=`
+      <div class="body">
+        <div class="top">
+          <span class="adres">${esc(m.adres)}</span>
+          <span class="badge b-${m.urgentie}"><span class="d"></span>${labelUrgentie(m.urgentie)}</span>
+          <span class="badge s-${m.status}">${labelStatus(m.status)}</span>
+        </div>
+        <div class="oms">${esc(m.omschrijving)}</div>
+        <div class="meta">${esc(m.melder_naam)} · ${fmtRel(m.created_at)}${(m.foto_paths&&m.foto_paths.length)?' · 📷 '+m.foto_paths.length:''}</div>
+      </div>
+      <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    el.addEventListener('click',()=>openDetail(m.id));
+    L.appendChild(el);
+  });
+}
+function labelUrgentie(u){ return {laag:'Laag',normaal:'Normaal',hoog:'Hoog',spoed:'Spoed'}[u]||u; }
+function labelStatus(s){ return {open:'Open',in_behandeling:'In behandeling',afgerond:'Afgerond'}[s]||s; }
+['dashQ','dashStatus','dashUrgentie'].forEach(id=>$(id).addEventListener('input',renderDashboard));
+
+async function openDetail(id){
+  const m=meldingenCache.find(x=>x.id===id); if(!m) return;
+  $('dAdres').textContent=m.adres;
+  const photoUrls = await Promise.all((m.foto_paths||[]).map(p=>DB.photoUrl(p)));
+  $('dBody').innerHTML = `
+    <div class="detail-row"><span class="dl">Urgentie</span><span class="dv"><span class="badge b-${m.urgentie}"><span class="d"></span>${labelUrgentie(m.urgentie)}</span></span></div>
+    <div class="detail-row"><span class="dl">Gemeld</span><span class="dv">${fmtFull(m.created_at)}</span></div>
+    <div class="detail-row"><span class="dl">Door</span><span class="dv">${esc(m.melder_naam)}</span></div>
+    ${m.melder_contact?`<div class="detail-row"><span class="dl">Contact</span><span class="dv">${esc(m.melder_contact)}</span></div>`:''}
+    <div class="detail-row" style="display:block"><span class="dl" style="display:block;margin-bottom:4px">Omschrijving</span><span class="dv" style="text-align:left;display:block">${esc(m.omschrijving)}</span></div>
+    ${m.opmerking?`<div class="detail-row" style="display:block"><span class="dl" style="display:block;margin-bottom:4px">Opmerking</span><span class="dv" style="text-align:left;display:block">${esc(m.opmerking)}</span></div>`:''}
+    ${photoUrls.length?`<div class="detail-photos">${photoUrls.map(u=>`<img src="${u}" data-full="${u}">`).join('')}</div>`:''}
+    <div class="status-actions" id="statusActions">
+      <button data-s="open" aria-pressed="${m.status==='open'}">Open</button>
+      <button data-s="in_behandeling" aria-pressed="${m.status==='in_behandeling'}">In behandeling</button>
+      <button data-s="afgerond" aria-pressed="${m.status==='afgerond'}">Afgerond</button>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Interne notitie</label><div class="boxed-input"><textarea id="notitieField" style="min-height:56px">${esc(m.beheer_notitie||'')}</textarea></div></div>
+    <button class="btn btn-sm" id="notitieSave" style="margin-top:6px">Notitie opslaan</button>`;
+  $('dBody').querySelectorAll('.detail-photos img').forEach(img=>img.addEventListener('click',()=>{ $('lbImg').src=img.dataset.full; $('lightbox').classList.add('open'); }));
+  $('statusActions').querySelectorAll('button').forEach(b=>b.addEventListener('click', async function(){
+    try{ await DB.updateStatus(m.id,this.dataset.s); auditLog('melding.status-gewijzigd', m.id+' → '+this.dataset.s); m.status=this.dataset.s; $('statusActions').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===this)); renderDashboard(); toast('Status bijgewerkt'); }
+    catch(err){ toast('Bijwerken mislukt: '+(err.message||''), true); }
+  }));
+  $('notitieSave').addEventListener('click', async ()=>{
+    try{ await DB.addNotitie(m.id, $('notitieField').value.trim()); auditLog('melding.notitie-opgeslagen', m.id); toast('Notitie opgeslagen'); }
+    catch(err){ toast('Opslaan mislukt: '+(err.message||''), true); }
+  });
+  $('dDelete').onclick = async ()=>{
+    if(!confirm('Deze melding definitief verwijderen?')) return;
+    try{ await DB.remove(m.id); auditLog('melding.verwijderd', m.id+' — '+m.adres); closeDetail(); meldingenCache=meldingenCache.filter(x=>x.id!==m.id); renderDashboard(); toast('Melding verwijderd'); }
+    catch(err){ toast('Verwijderen mislukt: '+(err.message||''), true); }
+  };
+  $('detailOverlay').classList.add('open');
+}
+function closeDetail(){ $('detailOverlay').classList.remove('open'); }
+$('dClose').addEventListener('click',closeDetail);
+$('dCloseBtn').addEventListener('click',closeDetail);
+$('detailOverlay').addEventListener('click',e=>{ if(e.target===$('detailOverlay')) closeDetail(); });
+$('lbClose').addEventListener('click',()=>$('lightbox').classList.remove('open'));
+$('lightbox').addEventListener('click',e=>{ if(e.target===$('lightbox')) $('lightbox').classList.remove('open'); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDetail(); $('lightbox').classList.remove('open'); $('settingsOverlay').classList.remove('open'); $('auditOverlay').classList.remove('open'); } });
+
+// ---------- QR-codes ----------
+const QR_KEY='klus_qr_lijst';
+function getQrList(){ try{ const r=JSON.parse(localStorage.getItem(QR_KEY)||'[]'); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
+function setQrList(arr){ try{ localStorage.setItem(QR_KEY, JSON.stringify(arr)); }catch(e){ toast('Opslaan van QR-lijst mislukt', true); } }
+
+function baseUrl(){ return window.location.origin + window.location.pathname; }
+function renderQrCard(entry){
+  $('qrResultGroup').style.display='';
+  const card=document.createElement('div'); card.className='qr-card'; card.dataset.id=entry.id;
+  const holder=document.createElement('div');
+  card.appendChild(holder);
+  const meta=document.createElement('div');
+  meta.innerHTML=`<div class="qa">${esc(entry.adres)}</div><div class="qi">Scan om een klus te melden</div>`;
+  card.appendChild(meta);
+  const delBtn=document.createElement('button');
+  delBtn.className='btn-sm'; delBtn.style.marginTop='8px'; delBtn.textContent='Verwijderen';
+  delBtn.addEventListener('click', ()=>removeQrCard(entry.id));
+  card.appendChild(delBtn);
+  $('qrGrid').appendChild(card);
+  const url = baseUrl()+'?view=melden&locatie='+encodeURIComponent(entry.adres);
+  try{
+    new QRCode(holder, { text:url, width:160, height:160, correctLevel: QRCode.CorrectLevel.M });
+  }catch(e){
+    holder.innerHTML = '<div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;background:var(--fill);border-radius:8px;font-size:.7rem;color:var(--ink-3);text-align:center;padding:8px">QR-bibliotheek kon niet laden (internetverbinding nodig bij eerste gebruik)</div>';
+  }
+}
+function addQrCard(adres){
+  const entry = { id:uid(), adres, created_at:nowISO() };
+  const list = getQrList(); list.push(entry); setQrList(list);
+  auditLog('qr.aangemaakt', adres);
+  renderQrCard(entry);
+}
+function removeQrCard(id){
+  setQrList(getQrList().filter(e=>e.id!==id));
+  auditLog('qr.verwijderd', id);
+  const card = $('qrGrid').querySelector(`[data-id="${id}"]`);
+  if(card) card.remove();
+  if(!$('qrGrid').children.length) $('qrResultGroup').style.display='none';
+}
+function loadSavedQrCodes(){
+  const list = getQrList();
+  list.forEach(renderQrCard);
+}
+$('qrAddBtn').addEventListener('click',()=>{ const a=$('qrAdres').value.trim(); if(!a){ toast('Vul een adres in',true); return; } addQrCard(a); $('qrAdres').value=''; });
+$('qrBulkBtn').addEventListener('click',()=>{
+  const lines=$('qrBulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){ toast('Vul minstens één adres in',true); return; }
+  lines.forEach(addQrCard);
+  $('qrBulk').value='';
+});
+$('qrPrintBtn').addEventListener('click',()=>window.print());
+$('qrClearBtn').addEventListener('click',()=>{
+  if(!getQrList().length) return;
+  if(!confirm('Alle opgeslagen QR-codes verwijderen?')) return;
+  setQrList([]); auditLog('qr.alles-gewist','');
+  $('qrGrid').innerHTML=''; $('qrResultGroup').style.display='none';
+});
+
+// ---------- instellingen ----------
+function openSettings(){
+  const cfg=getLocalCfg();
+  $('cfgTenant').value=cfg.tenant; $('cfgEmail').value=cfg.contactEmail; $('cfgPin').value=cfg.pin;
+  $('settingsOverlay').classList.add('open');
+}
+$('settingsBtn').addEventListener('click',openSettings);
+$('settingsClose').addEventListener('click',()=>$('settingsOverlay').classList.remove('open'));
+$('settingsCloseBtn2').addEventListener('click',()=>$('settingsOverlay').classList.remove('open'));
+$('settingsOverlay').addEventListener('click',e=>{ if(e.target===$('settingsOverlay')) $('settingsOverlay').classList.remove('open'); });
+$('settingsSave').addEventListener('click',()=>{
+  const cfg={ tenant:$('cfgTenant').value.trim()||DEFAULT_CFG.tenant, contactEmail:$('cfgEmail').value.trim(), pin:$('cfgPin').value.trim()||DEFAULT_CFG.pin };
+  setLocalCfg(cfg);
+  $('tenantLabel').innerHTML = esc(cfg.tenant)+' <span class="mode-pill '+(DB.requiresRealAuth?'cloud':'local')+'" id="modePill">'+(DB.requiresRealAuth?'SUPABASE':'LOKAAL')+'</span>';
+  $('settingsOverlay').classList.remove('open');
+  toast('Instellingen opgeslagen');
+});
+
+// ---------- audit-log ----------
+$('auditLogBtn').addEventListener('click',()=>{ $('auditOverlay').classList.add('open'); renderAuditLog(); });
+$('auditClose').addEventListener('click',()=>$('auditOverlay').classList.remove('open'));
+$('auditCloseBtn2').addEventListener('click',()=>$('auditOverlay').classList.remove('open'));
+$('auditOverlay').addEventListener('click',e=>{ if(e.target===$('auditOverlay')) $('auditOverlay').classList.remove('open'); });
+$('auditExportBtn').addEventListener('click', async ()=>{
+  let log=[];
+  if(DB.requiresRealAuth && DB.client){
+    try{
+      const {data,error}=await DB.client.from('audit_log').select('*').order('time',{ascending:false}).limit(500);
+      if(error) throw error;
+      log=data||[];
+    }catch(err){
+      console.warn('audit-log export uit Supabase mislukt, val terug op lokaal:', err);
+      try{ log = JSON.parse(localStorage.getItem('klus_audit_log')||'[]'); }catch(e){}
+    }
+  } else {
+    try{ log = JSON.parse(localStorage.getItem('klus_audit_log')||'[]'); }catch(e){}
+  }
+  const rows=[['Tijd','Actor','Actie','Detail']];
+  log.forEach(e=>rows.push([fmtFull(e.time), e.actor, e.action, e.detail||'']));
+  const csv = rows.map(r=>r.map(v=>String(v).replace(/;/g,',')).join(';')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='audit-log-'+nowISO().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast('Audit-log geëxporteerd');
+});
+
+// ---------- init ----------
+(function initTenantLabel(){
+  const cfg=getLocalCfg();
+  $('tenantLabel').innerHTML = esc(cfg.tenant)+' <span class="mode-pill '+(DB.requiresRealAuth?'cloud':'local')+'" id="modePill">'+(DB.requiresRealAuth?'SUPABASE':'LOKAAL')+'</span>';
+})();
+refreshAuthGate();
+loadSavedQrCodes();
+
+if(USE_SUPABASE) tryUpgradeToCloud();
+
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+})();
+</script>
+</body>
+</html>
